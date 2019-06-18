@@ -18,24 +18,71 @@
 
 (require web-server/servlet
          web-server/servlet-env
-         web-server/templates)
+         web-server/templates
+         web-server/http/id-cookie
+         db
+         crypto
+         crypto/argon2
+         "db.rkt")
+
+; utility functions
+
+(define (userid->cookie userid salt)
+  (make-id-cookie "auth" (number->string userid)
+                  #:key (bytes-append
+                          (make-secret-salt/file "auth.salt")
+                          salt)))
+
+; main dispatch table
+
+(define-values (xyzzygy-dispatch xyzzygy-url)
+  (dispatch-rules
+    [("") homepage]
+    [("login") login-page]
+    [("about") about-page]))
+
+; specific page logic
 
 (define (response/html html)
   (response/output
     (λ (out) (write-string html out))))
 
-(define-values (xyzzygy-dispatch xyzzygy-url)
-  (dispatch-rules
-    [("") homepage]
-    [("about") about-page]))
-
 (define (homepage req)
   (response/html (include-template "../templates/home.html")))
+
+(define (login-page req)
+  (if (bytes=? (request-method req) #"POST")
+    (match (map (λ (field)
+                   (bindings-assq field (request-bindings/raw req)))
+                '(#"username" #"password"))
+           [(list (? binding:form? username) (? binding:form? password))
+            (=> fail)
+            (match (query-maybe-row db-conn
+                                    "SELECT id, password
+                                     FROM users
+                                     WHERE username = $1"
+                                    (bytes->string/utf-8 username #\?))
+                   [(vector userid password*)
+                    (if (pwhash-verify #f password password*)
+                      (redirect-to
+                        "/" see-other
+                        #:headers
+                        (list (cookie->header (userid->cookie userid password*))))
+                      (fail))]
+                   [_ (fail)])]
+           [_ (redirect-to "/login?failed" see-other)])
+    (response/html (include-template "../templates/login.html"))))
 
 (define (about-page req)
   (response/html (include-template "../templates/about.html")))
 
+; main
+
+(db-init)
+(crypto-factories (list argon2-factory))
+
 (serve/servlet xyzzygy-dispatch
                #:command-line? #t
+               #:listen-ip #f
                #:servlet-regexp #rx""
                #:extra-files-paths (list (build-path "static")))
