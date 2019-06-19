@@ -5,17 +5,39 @@ html, body {
     padding: 0;
     color: $fg;
     background-color: $bg;
-    font: 13pt sans-serif;
+    font: 1rem sans-serif;
 }
 
 header {
     background-color: #000;
     padding: 1em;
     margin-bottom: 1em;
-}
-
-header img {
-    width: 300px;
+    img { width: 300px; }
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    > span.nav { font-size: 1.5rem; > a { text-decoration: none; } }
+    > span:last-child {
+        align-self: flex-start;
+        position: relative;
+        > span {
+            position: absolute;
+            white-space: nowrap;
+            right: 0;
+            > form {
+                display: inline;
+                > input#logout {
+                    font-size: 1rem;
+                    padding: 0;
+                    background: none;
+                    border: none;
+                    color: theme(1);
+                    text-decoration: underline;
+                    cursor: pointer;
+                }
+            }
+        }
+    }
 }
 
 main {
@@ -25,31 +47,45 @@ main {
 }
 
 input[type='text'], input[type='password'] {
+    font: 0.9rem sans-serif;
+    color: $fg;
     background-color: $bg1;
     border: 1px solid $bg2;
     border-radius: 0.5em;
+    padding: 0.25em 0.5em;
 }
 
-input[type='submit'], button {
+input[type='submit']:not(#logout), button {
+    font: 0.9rem sans-serif;
     color: theme(0);
     background-color: theme(5);
     border: 1px solid theme(6);
     border-radius: 0.5em;
     padding: 0.5em 1em;
     cursor: pointer;
-}
-
-input[type='submit']:hover, button:hover {
-    background-color: theme(6);
-    border-color: theme(7);
+    &:hover {
+        background-color: theme(6);
+        border-color: theme(7);
+    }
+    &.danger {
+        color: theme(5);
+        background-color: theme(0);
+        border-color: theme(1);
+        &:hover {
+            background-color: theme(1);
+            border-color: theme(2);
+        }
+    }
 }
 
 div.forminput {
     margin: 0.5em 0;
+    > label {
+        font-size: 0.8rem;
+        color: $fg1;
+        display: block;
+    }
 }
 
-div.forminput > label {
-    font-size: 11pt;
-    color: $fg1;
-    display: block;
-}
+code { font: 1rem monospace, sans-serif; }
+a { color: theme(1); }

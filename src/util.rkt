@@ -16,30 +16,8 @@
 
 #lang racket
 
-(require db sql)
+(require srfi/13)
 
-(provide db-conn db-init
-         (struct-out user)
-         (all-from-out db) (all-from-out sql))
+(provide bytes->string (all-from-out srfi/13))
 
-(define db-conn
-  (virtual-connection
-    (connection-pool
-      (λ () (sqlite3-connect #:database "xyzzygy.db"
-                             #:mode 'create)))))
-
-(define (db-init)
-  (query-exec db-conn
-              "CREATE TABLE IF NOT EXISTS users (
-                 id       INTEGER PRIMARY KEY,
-                 created  REAL NOT NULL,
-                 username TEXT NOT NULL,
-                 password TEXT NOT NULL
-               )")
-  (query-exec db-conn
-              "CREATE TABLE IF NOT EXISTS keys (
-                 key     TEXT NOT NULL,
-                 created REAL NOT NULL
-               )"))
-
-(struct user (id name))
+(define (bytes->string b) (bytes->string/utf-8 b #\?))

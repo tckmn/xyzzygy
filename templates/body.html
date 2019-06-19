@@ -2,5 +2,20 @@
     <body>
         <header>
             <a href='/'><img src='/xyzzygy.svg' alt='xyzzygy'></a>
+            <span class='nav'><a href='/'>home</a></span>
+            <span class='nav'><a href='/about'>about</a></span>
+            <span class='nav'><a href='/users'>users</a></span>
+            <span class='nav'><a href='/games'>games</a></span>
+            <span class='nav'><a href='/decks'>decks</a></span>
+            @if[u @~a{
+            <span>
+                <span>
+                    logged in as <a href="/users/@user-id[u]">@xexpr->string[@user-name[u]]</a> &bull;
+                    <form action='/logout' method='post'><input id='logout' type='submit' value='log out'></form>
+                </span>
+            </span>
+            } @~a{
+            <span><span><a href='/login'>login / register</a></span></span>
+            }]
         </header>
         <main>

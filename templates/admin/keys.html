@@ -1,9 +1,22 @@
 @include-template{../head.html}
 
+<link rel='stylesheet' href='keys.css'>
 <title>xyzzygy - Keys</title>
 
 @include-template{../body.html}
 
-keys
+<div id='rows'>
+    <form method='post'>
+        <input name='addkey' type='text' placeholder='leave blank to auto-generate'>
+        <input type='submit' value='+'>
+    </form>
+    @in[k (in-query db-conn (select key #:from keys #:order-by created #:desc))]{
+    <form method='post'>
+        <code>@xexpr->string[k]</code>
+        <input type='submit' value='&times;' class='danger'>
+        <input name='delkey' type='hidden' value="@xml-attribute-encode[k]">
+    </form>
+    }
+</div>
 
 @include-template{../end.html}
