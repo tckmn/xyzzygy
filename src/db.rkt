@@ -16,9 +16,11 @@
 
 #lang racket
 
-(require db)
+(require db sql)
 
-(provide db-conn db-init)
+(provide db-conn db-init
+         (struct-out user)
+         (all-from-out db) (all-from-out sql))
 
 (define db-conn
   (virtual-connection
@@ -32,4 +34,10 @@
                  id INTEGER PRIMARY KEY,
                  username TEXT NOT NULL,
                  password TEXT NOT NULL
+               )")
+  (query-exec db-conn
+              "CREATE TABLE IF NOT EXISTS keys (
+                 key TEXT NOT NULL
                )"))
+
+(struct user (id name))

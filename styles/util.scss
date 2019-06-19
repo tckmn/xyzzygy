@@ -1,0 +1,18 @@
+@function hsv($h, $s, $v, $a: 1) {
+    @if $v == 0 {
+        @return hsla(0, 0, 0, $a);
+    } @else {
+        $l: ($v/2) * (2 - ($s/100));
+        @return hsla($h, ($v * $s) / if($l < 50, $l * 2, 200 - $l * 2), $l, $a);
+    }
+}
+
+@function theme($x) {
+    @return hsv(7, min(100, 40+15*$x), 100-13*$x);
+}
+
+$bg:  #181818;
+$bg1: #282828;
+$bg2: #383838;
+$fg1: #888888;
+$fg:  #d8d8d8;

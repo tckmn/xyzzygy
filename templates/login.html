@@ -1,9 +1,40 @@
-@(include-template "head.html")
+@include-template{head.html}
 
+<link rel='stylesheet' href='login.css'>
 <title>xyzzygy - Log in</title>
 
-@(include-template "body.html")
+@include-template{body.html}
 
-login
+@when[failed]{
+<p>Failed to login or register. Please try again.</p>
+}
 
-@(include-template "end.html")
+<form method='post'>
+    <div class='forminput'>
+        <label for='username-login'>Username</label>
+        <input type='text' name='username' id='username-login'>
+    </div>
+    <div class='forminput'>
+        <label for='password-login'>Password</label>
+        <input type='password' name='password' id='password-login'>
+    </div>
+    <input type='submit' value='Log in'>
+</form>
+
+<form method='post'>
+    <div class='forminput'>
+        <label for='username-register'>Username</label>
+        <input type='text' name='username' id='username-register'>
+    </div>
+    <div class='forminput'>
+        <label for='password-register'>Password</label>
+        <input type='password' name='password' id='password-register'>
+    </div>
+    <div class='forminput'>
+        <label for='key-register'>Key</label>
+        <input type='text' name='key' id='key-register'>
+    </div>
+    <input type='submit' value='Register'>
+</form>
+
+@include-template{end.html}

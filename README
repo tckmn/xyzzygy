@@ -1,4 +1,4 @@
 xyzzygy - a clone of the game Cards Against Humanity
 
-dependencies: web-server db crypto (with libargon2.so)
+dependencies: web-server db sql crypto (with libargon2.so)
 license: GPL

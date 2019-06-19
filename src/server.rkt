@@ -19,27 +19,19 @@
 (require web-server/servlet
          web-server/servlet-env
          web-server/templates
-         web-server/http/id-cookie
-         db
-         crypto
-         crypto/argon2
-         "db.rkt")
-
-; utility functions
-
-(define (userid->cookie userid salt)
-  (make-id-cookie "auth" (number->string userid)
-                  #:key (bytes-append
-                          (make-secret-salt/file "auth.salt")
-                          salt)))
+         "db.rkt"
+         "auth.rkt")
 
 ; main dispatch table
 
 (define-values (xyzzygy-dispatch xyzzygy-url)
   (dispatch-rules
-    [("") homepage]
-    [("login") login-page]
-    [("about") about-page]))
+    [("") homepage/get]
+    [("login") login-page/get]
+    [("login") #:method "post" login-page/post]
+    [("about") about-page/get]
+    [("admin" "keys") keys-page/get]
+    [("admin" "keys") #:method "post" keys-page/post]))
 
 ; specific page logic
 
@@ -47,39 +39,48 @@
   (response/output
     (λ (out) (write-string html out))))
 
-(define (homepage req)
+(define (homepage/get req)
   (response/html (include-template "../templates/home.html")))
 
-(define (login-page req)
-  (if (bytes=? (request-method req) #"POST")
-    (match (map (λ (field)
-                   (bindings-assq field (request-bindings/raw req)))
-                '(#"username" #"password"))
-           [(list (? binding:form? username) (? binding:form? password))
-            (=> fail)
-            (match (query-maybe-row db-conn
-                                    "SELECT id, password
-                                     FROM users
-                                     WHERE username = $1"
-                                    (bytes->string/utf-8 username #\?))
-                   [(vector userid password*)
-                    (if (pwhash-verify #f password password*)
-                      (redirect-to
-                        "/" see-other
-                        #:headers
-                        (list (cookie->header (userid->cookie userid password*))))
-                      (fail))]
-                   [_ (fail)])]
-           [_ (redirect-to "/login?failed" see-other)])
+(define (login-page/get req)
+  (let ([failed (assq 'failed (url-query (request-uri req)))])
     (response/html (include-template "../templates/login.html"))))
 
-(define (about-page req)
+(define (login-page/post req)
+  (match (map (λ (field)
+                 (bindings-assq field (request-bindings/raw req)))
+              '(#"username" #"password" #"key"))
+         [(list (? binding:form? username) (? binding:form? password) (? binding:form? key))
+          (=> fail)
+          (redirect-to
+            "/" see-other
+            #:headers
+            (list (cookie->header (auth-register
+                                    (binding:form-value username)
+                                    (binding:form-value password)
+                                    (binding:form-value key) fail))))]
+         [(list (? binding:form? username) (? binding:form? password) #f)
+          (=> fail)
+          (redirect-to
+            "/" see-other
+            #:headers
+            (list (cookie->header (auth-verify
+                                    (binding:form-value username)
+                                    (binding:form-value password) fail))))]
+         [_ (redirect-to "/login?failed" see-other)]))
+
+(define (about-page/get req)
   (response/html (include-template "../templates/about.html")))
+
+(define (keys-page/get req)
+  (response/html (include-template "../templates/admin/keys.html")))
+
+(define (keys-page/post req)
+  (response/html (include-template "../templates/admin/keys.html")))
 
 ; main
 
 (db-init)
-(crypto-factories (list argon2-factory))
 
 (serve/servlet xyzzygy-dispatch
                #:command-line? #t
