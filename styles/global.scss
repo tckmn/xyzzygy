@@ -12,11 +12,21 @@ header {
     background-color: #000;
     padding: 1em;
     margin-bottom: 1em;
-    img { width: 300px; }
+    img {
+        width: 300px;
+        @media (max-width: 850px) { width: 200px; }
+        @media (max-width: 700px) { width: 150px; }
+        @media (max-width: 600px) { max-width: 300px; width: 100%; }
+    }
+    > a:first-child { @media (max-width: 600px) { width: 100%; text-align: center; } }
     display: flex;
     justify-content: space-between;
     align-items: flex-end;
-    > span.nav { font-size: 1.5rem; > a { text-decoration: none; } }
+    @media (max-width: 600px) {
+        flex-direction: column;
+        align-items: center;
+    }
+    > span.nav { font-size: 1.4rem; > a { text-decoration: none; } }
     > span:last-child {
         align-self: flex-start;
         position: relative;
@@ -37,6 +47,11 @@ header {
                 }
             }
         }
+        @media (max-width: 600px) {
+            align-self: flex-end;
+            position: static;
+            > span { position: static; }
+        }
     }
 }
 
@@ -46,7 +61,7 @@ main {
     max-width: 800px;
 }
 
-input[type='text'], input[type='password'] {
+#{$txt} {
     font: 0.9rem sans-serif;
     color: $fg;
     background-color: $bg1;
@@ -55,7 +70,7 @@ input[type='text'], input[type='password'] {
     padding: 0.25em 0.5em;
 }
 
-input[type='submit']:not(#logout), button {
+#{$btn} {
     font: 0.9rem sans-serif;
     color: theme(0);
     background-color: theme(5);
@@ -78,12 +93,63 @@ input[type='submit']:not(#logout), button {
     }
 }
 
+h1 {
+    color: theme(2);
+    font-size: 1.8rem;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+    > span {
+        background-color: $bg;
+        padding: 0 10px;
+    }
+    :before {
+        border-top: 2px solid theme(3);
+        content: "";
+        margin: 0 auto;
+        position: absolute;
+        top: 50%; left: 0; right: 0; bottom: 0;
+        width: 100%;
+        z-index: -1;
+    }
+}
+
+h2 {
+    color: theme(2);
+    font-size: 1.3rem;
+}
+
+// used in login
+
 div.forminput {
     margin: 0.5em 0;
     > label {
         font-size: 0.8rem;
         color: $fg1;
         display: block;
+    }
+}
+
+// used in admin/keys, decks
+
+div.rows > * {
+    display: flex;
+    > :first-child {
+        flex: 1;
+        margin-right: 1em;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    margin-top: 0.5em;
+    &:first-child {
+        margin-top: 0;
+        margin-bottom: 1em;
+    }
+    input[type='submit']:not(#logout) {
+        font-weight: bold;
+        font-size: 1rem;
+        padding: 0.25em 0.75em;
     }
 }
 

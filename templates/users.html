@@ -4,6 +4,10 @@
 
 @include-template{body.html}
 
-users
+@in[(userid username) (in-query db-conn (select id username #:from users #:order-by created #:desc))]{
+<div class='user'>
+    <a href="/users/@userid">@xexpr->string[username]</a>
+</div>
+}
 
 @include-template{end.html}

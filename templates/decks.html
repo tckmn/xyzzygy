@@ -4,6 +4,25 @@
 
 @include-template{body.html}
 
-decks
+<h1><span>decks</span></h1>
+
+<p>note: you can view all of a user's decks by visiting their profile page</p>
+
+<h2>server pinned decks</h2>
+
+<h2>your decks</h2>
+
+<div class='rows'>
+    <form method='post'>
+        <input name='adddeck' type='text' placeholder='deck name'>
+        <input type='submit' value='+'>
+    </form>
+    @in[(name deckid) (in-query db-conn (select name id #:from decks #:where (= created ,(user-id u)) #:order-by created #:desc))]{
+    <div>
+        <span>@xexpr->string[name]</span>
+        <a class='btn' href="/decks/@deckid">&rArr;</a>
+    </div>
+    }
+</div>
 
 @include-template{end.html}

@@ -1,0 +1,45 @@
+#!/bin/bash
+
+sass=sassc
+delay=0.2
+datefmt=%T.%N
+
+shopt -s globstar
+oldmod=0
+pid=
+
+while :
+do
+
+    for f in styles/**/*.scss
+    do
+        g="static${f#styles}"
+        g="${g%.scss}.css"
+        if [ "$(stat -c%Y "$f")" -gt "$(stat -c%Y "$g" 2>/dev/null || echo 0)" ]
+        then
+            echo "[$(date +"$datefmt")] compiling $f..."
+            "$sass" "$f" "$g" -t compressed
+            echo "[$(date +"$datefmt")] done"
+        fi
+    done
+
+    restart=
+    for f in src/**/*.rkt templates/**/*.html
+    do
+        newmod="$(stat -c%Y "$f")"
+        if [ "$newmod" -gt "$oldmod" ]
+        then
+            oldmod="$newmod"
+            restart=1
+        fi
+    done
+    if [ -n "$restart" ]
+    then
+        echo "[$(date +"$datefmt")] restarting server..."
+        kill -SIGINT $pid 2>/dev/null
+        racket src/server.rkt &
+        pid=$!
+    fi
+
+    sleep $delay
+done

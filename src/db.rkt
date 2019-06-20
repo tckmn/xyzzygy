@@ -25,8 +25,8 @@
 (define db-conn
   (virtual-connection
     (connection-pool
-      (λ () (sqlite3-connect #:database "xyzzygy.db"
-                             #:mode 'create)))))
+      (thunk (sqlite3-connect #:database "xyzzygy.db"
+                              #:mode 'create)))))
 
 (define (db-init)
   (query-exec db-conn
@@ -34,12 +34,28 @@
                  id       INTEGER PRIMARY KEY,
                  created  REAL NOT NULL,
                  username TEXT NOT NULL,
-                 password TEXT NOT NULL
+                 password TEXT NOT NULL,
+                 admin    INTEGER NOT NULL
                )")
   (query-exec db-conn
               "CREATE TABLE IF NOT EXISTS keys (
                  key     TEXT NOT NULL,
                  created REAL NOT NULL
-               )"))
+               )")
+  (query-exec db-conn
+              "CREATE TABLE IF NOT EXISTS decks (
+                 id      INTEGER PRIMARY KEY,
+                 created REAL NOT NULL,
+                 owner   INTEGER NOT NULL,
+                 name    TEXT NOT NULL,
+                 pinned  INTEGER NOT NULL
+               )")
+  (query-exec db-conn
+              "CREATE TABLE IF NOT EXISTS cards (
+                 id      INTEGER PRIMARY KEY,
+                 created REAL NOT NULL,
+                 deckid  INTEGER NOT NULL,
+                 val     TEXT NOT NULL
+               );"))
 
-(struct user (id name))
+(struct user (id name admin?))

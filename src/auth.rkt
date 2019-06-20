@@ -23,7 +23,7 @@
          "db.rkt"
          "util.rkt")
 
-(provide auth-register auth-verify generate-key request->user)
+(provide auth-register auth-verify generate-key request->user userid->user)
 
 (crypto-factories (list argon2-factory))
 
@@ -45,20 +45,28 @@
                  (match
                    (query-maybe-row
                      db-conn
-                     (select username password
+                     (select username password admin
                              #:from users
                              #:where (= id ,userid)))
-                   [(vector username password*)
+                   [(vector username password* admin?)
                     (if (valid-id-cookie?
                           c
                           #:name "auth"
                           #:key (bytes-append
                                   (make-secret-salt/file "auth.salt")
                                   (string->bytes/utf-8 password*)))
-                      (user userid username)
+                      (user userid username (int->bool admin?))
                       #f)]
                    [_ #f])))]
         [else #f]))
+
+(define (userid->user userid)
+  (match (query-maybe-row db-conn (select username admin
+                                         #:from users
+                                         #:where (= id ,userid)))
+         [(vector username admin?)
+          (user userid username (int->bool admin?))]
+         [_ #f]))
 
 (define (query-info conn info q)
   (cdr (assq info (simple-result-info (query conn q)))))

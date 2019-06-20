@@ -34,33 +34,36 @@
 
 (define-values (xyzzygy-dispatch xyzzygy-url)
   (dispatch-rules
-    [("") homepage/get]
-    [("login") login-page/get]
-    [("login") #:method "post" login-page/post]
-    [("logout") #:method "post" logout-page/post]
-    [("about") about-page/get]
-    [("users") users-page/get]
-    [("games") games-page/get]
-    [("decks") decks-page/get]
-    [("admin" "keys") keys-page/get]
-    [("admin" "keys") #:method "post" keys-page/post]))
+    [("")                             (pw homepage/get)]
+    [("login")                        (pw login-page/get)]
+    [("login")        #:method "post" (pw login-page/post)]
+    [("logout")       #:method "post" (pw logout-page/post)]
+    [("about")                        (pw about-page/get)]
+    [("users")                        (pw users-page/get)]
+    [("users" (integer-arg))          (pw users-page:id/get)]
+    [("games")                        (pw games-page/get)]
+    [("decks")                        (pw decks-page/get)]
+    [("admin" "keys")                 (pw keys-page/get #:admin #t)]
+    [("admin" "keys") #:method "post" (pw keys-page/post #:admin #t)]))
+
+(define ((pw page #:admin [admin #f]) . args) ; page wrapper
+  (let ([u (request->user (car args))])
+    (apply (if (and admin (nand u (user-admin? u))) 403-page page) u args)))
 
 ; specific page logic
 
-(define (response/html html)
-  (response/output
+(define (response/html html #:code [code 200])
+  (response/output #:code code
     (λ (out) (write-string html out))))
 
-(define (homepage/get req)
-  (let ([u (request->user req)])
-    (response/html (include-template "../templates/home.html"))))
+(define (homepage/get u req)
+  (response/html (include-template "../templates/home.html")))
 
-(define (login-page/get req)
-  (let ([u (request->user req)]
-        [failed (assq 'failed (url-query (request-uri req)))])
+(define (login-page/get u req)
+  (let ([failed (assq 'failed (url-query (request-uri req)))])
     (response/html (include-template "../templates/login.html"))))
 
-(define (login-page/post req)
+(define (login-page/post u req)
   (match
     (bindings req '(#"username" #"password" #"key"))
     [(list (? binding:form? username) (? binding:form? password) (? binding:form? key))
@@ -82,34 +85,35 @@
                                (binding:form-value password) fail))))]
     [_ (redirect-to "/login?failed" see-other)]))
 
-(define (logout-page/post req)
+(define (logout-page/post u req)
   (redirect-to "/" see-other
                #:headers
                (list (cookie->header (logout-id-cookie "auth")))))
 
-(define (about-page/get req)
-  (let ([u (request->user req)])
-    (response/html (include-template "../templates/about.html"))))
+(define (about-page/get u req)
+  (response/html (include-template "../templates/about.html")))
 
-(define (users-page/get req)
-  (let ([u (request->user req)])
-    (response/html (include-template "../templates/users.html"))))
+(define (users-page/get u req)
+  (response/html (include-template "../templates/users.html")))
 
-(define (games-page/get req)
-  (let ([u (request->user req)])
-    (response/html (include-template "../templates/games.html"))))
+(define (users-page:id/get u req userid)
+  (let ([user (userid->user userid)])
+    (if user
+        (response/html (include-template "../templates/users_id.html"))
+        (404-page req))))
 
-(define (decks-page/get req)
-  (let ([u (request->user req)])
-    (response/html (include-template "../templates/decks.html"))))
+(define (games-page/get u req)
+  (response/html (include-template "../templates/games.html")))
 
-(define (keys-page/get req)
-  (let ([u (request->user req)])
-    (response/html (include-template "../templates/admin/keys.html"))))
+(define (decks-page/get u req)
+  (response/html (include-template "../templates/decks.html")))
+
+(define (keys-page/get u req)
+  (response/html (include-template "../templates/admin/keys.html")))
 
 (define (make-key key)
   (match (bytes->string (binding:form-value key)) ["" (generate-key)] [s s]))
-(define (keys-page/post req)
+(define (keys-page/post u req)
   (cond
     [(binding req #"addkey")
      => (λ (key)
@@ -125,9 +129,11 @@
                      #:where (= key ,(make-key key)))))])
   (redirect-to "/admin/keys" see-other))
 
-(define (404-page req)
-  (let ([u (request->user req)])
-    (response/html (include-template "../templates/404.html"))))
+(define (403-page u req . _)
+  (response/html #:code 403 (include-template "../templates/403.html")))
+
+(define (404-page u req . _)
+  (response/html #:code 404 (include-template "../templates/404.html")))
 
 ; main
 
@@ -135,10 +141,12 @@
 
 (serve/servlet xyzzygy-dispatch
                #:command-line? #t
+               #:banner? #t
                #:listen-ip #f
-               #:port 3001
+               #:port 3371
                #:servlet-regexp #rx""
                #:server-root-path (current-directory)
                #:servlets-root (current-directory)
-               #:file-not-found-responder 404-page
+               #:file-not-found-responder (pw 404-page)
+               #:log-file (current-output-port)
                #:extra-files-paths (list (build-path "static")))

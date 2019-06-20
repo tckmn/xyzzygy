@@ -18,6 +18,7 @@
 
 (require srfi/13)
 
-(provide bytes->string (all-from-out srfi/13))
+(provide (all-defined-out) (all-from-out srfi/13))
 
 (define (bytes->string b) (bytes->string/utf-8 b #\?))
+(define (int->bool i) (case i [(0) #f] [else #t]))
